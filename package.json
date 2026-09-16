@@ -1,0 +1,18 @@
+{
+  "name": "bestbuy-chinese-login-fix",
+  "version": "1.0.1",
+  "private": true,
+  "description": "Scoped userscript compatibility fix for Best Buy localized x-grid-b request headers.",
+  "scripts": {
+    "test": "node tests/header-fix.test.cjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "author": "RyanGosling0508",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/RyanGosling0508/bestbuy-chinese-login-fix.git"
+  }
+}
