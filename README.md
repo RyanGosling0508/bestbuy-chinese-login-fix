@@ -2,7 +2,7 @@
 
 [中文说明](README.zh-CN.md)
 
-[Install the userscript](./bestbuy-chinese-header-fix.user.js?raw=1) · [GitHub repository](https://github.com/RyanGosling0508/bestbuy-chinese-login-fix)
+[Install from Greasy Fork](https://greasyfork.org/zh-CN/scripts/596108-best-buy-%E4%B8%AD%E6%96%87%E8%AF%B7%E6%B1%82%E5%A4%B4%E5%85%BC%E5%AE%B9%E4%BF%AE%E5%A4%8D) · [GitHub source](./bestbuy-chinese-header-fix.user.js) · [GitHub repository](https://github.com/RyanGosling0508/bestbuy-chinese-login-fix)
 
 A small Tampermonkey userscript for the Best Buy sign-in error caused by a localized time-zone name in the `x-grid-b` request header. It is intended to let affected users keep Chrome's Chinese display language.
 

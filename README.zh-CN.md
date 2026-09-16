@@ -2,7 +2,7 @@
 
 [English](README.md)
 
-[安装用户脚本](./bestbuy-chinese-header-fix.user.js?raw=1) · [GitHub 仓库](https://github.com/RyanGosling0508/bestbuy-chinese-login-fix)
+[在 Greasy Fork 安装](https://greasyfork.org/zh-CN/scripts/596108-best-buy-%E4%B8%AD%E6%96%87%E8%AF%B7%E6%B1%82%E5%A4%B4%E5%85%BC%E5%AE%B9%E4%BF%AE%E5%A4%8D) · [GitHub 源码](./bestbuy-chinese-header-fix.user.js) · [GitHub 仓库](https://github.com/RyanGosling0508/bestbuy-chinese-login-fix)
 
 这个篡改猴脚本处理 Best Buy 登录时，中文时区名称进入 `x-grid-b` 请求头后触发的字符编码异常，让受影响的用户能够保留 Chrome 中文界面。
 
