@@ -1,43 +1,67 @@
-# Validation record and reproduction
+# 验证记录与复现方法
 
-Last verified: 2026-09-16.
+最后验证日期：2026-09-16。
 
-The live test used script version 1.0.0. Version 1.0.1 changes publication metadata only; its executable JavaScript is byte-for-byte identical. Local tests were rerun against the packaged 1.0.1 file.
+真实网站测试使用脚本 1.0.0。发布版 1.0.1 仅增加发布元信息，可执行 JavaScript 与实测版本逐字节一致；发布包中的 1.0.1 也已通过本地测试。
 
-The real-site test completed full login after the account owner handled Chrome's authentication confirmation. This was not inferred merely from reaching the next step. No same-session comparison with the script disabled was performed; separate password and one-time-code paths were not tested.
+真实网站测试确认了账号所有者完成 Chrome 身份确认后的完整登录结果，并非仅以进入下一步作为成功依据。同一会话中没有做停用脚本的 A/B 对照，也未单独测试密码和一次性验证码登录路径。
 
-## Test matrix
+## 对应报错
 
-| Test | Expected observation | Current evidence |
+在 Best Buy 登录页填写邮箱并点击 Continue 后出现：
+
+```text
+Failed to execute 'fetch' on 'Window': Failed to read the 'headers' property from 'RequestInit': String contains non ISO-8859-1 code point.
+```
+
+这是浏览器端的 JavaScript `TypeError`，没有数字错误码。本次已定位的原因是中文时区名称进入 `x-grid-b` 请求头，导致浏览器在发送请求前的头部转换阶段失败。
+
+## 测试项目与结果
+
+| 测试项目 | 预期现象 | 验证结果 |
 | --- | --- | --- |
-| Chinese display language, no patch, original Best Buy email step | Header conversion TypeError appears | Reproduced in the investigated Windows Chrome environment |
-| Read `new Date().toString()` in affected Chrome | Localized time-zone text includes Chinese characters | Observed `GMT-0400 (北美东部夏令时间)` |
-| Read date and language again after restoring Chinese and restarting Chrome | Chinese locale and time-zone text still present while patched login succeeds | Confirmed `navigator.language` was `zh-CN`; date still included `GMT-0400 (北美东部夏令时间)` |
-| Preferred web-content language English, display language still Chinese | Locale issue may remain | `navigator.language` was `en` while date text was Chinese in the investigated environment |
-| English display language after browser restart, no patch | Time-zone name becomes English; original error removed | Observed English date text; user confirmed successful login |
-| Construct a header from literal Chinese JSON, without network | Browser rejects non-byte-string value | Reproduced locally again after Chinese-language restart; first invalid character was `北` (`U+5317`, decimal 21271) |
-| Construct a header after Unicode escaping | Header construction succeeds; parsed JSON equals original | PASS |
-| Chinese, Japanese, and emoji JSON data | Exact decoded data preserved, including surrogate pairs | PASS in local automated test |
-| Existing JSON number spelling and non-target headers | Remain unchanged | PASS in local automated test |
-| Request body, credentials option, original input | Preserved; original headers not mutated | PASS in local automated test |
-| Plain object and array-of-pairs headers; `Request` input | Scoped patch works | PASS in local automated test |
-| Existing `Headers` object and ASCII-only value | Passed through without change | PASS in local automated test |
-| Foreign origin, `/cart`, and `/identity-other` | Left unchanged | PASS in local automated test |
-| Malformed JSON | Left unchanged rather than guessed or rewritten | PASS in local automated test |
-| Site wrapper captures patched fetch, later inserts `x-grid-b` | Earlier patch processes the inserted header | PASS in local simulated-wrapper test |
-| Chinese display language + Tampermonkey Dynamic + script enabled + freshly loaded real Best Buy page | Original error absent; email step advances | **PASS — Chrome Simplified Chinese confirmed after restart; script enabled and Dynamic setting persisted; original error absent** |
-| Full account authentication in that patched Chinese environment | Authenticated account state confirmed | **PASS — account owner completed Chrome authentication confirmation; Best Buy returned to the homepage with an authenticated account greeting** |
-| Same-session script-disabled A/B comparison | Reproduce the old error before re-enabling | Not performed; earlier original-error observations used as baseline |
-| Separate password / one-time-code sign-in paths | Original encoding exception absent throughout each path | Not tested |
-| Disable script and reload after Best Buy ships its own fix | Normal login continues | Not yet applicable |
+| 中文显示语言、未启用补丁，提交原始 Best Buy 邮箱步骤 | 出现请求头转换 TypeError | 已在本次调查的 Windows Chrome 环境中复现 |
+| 在受影响 Chrome 中读取 `new Date().toString()` | 时区描述包含中文 | 已观察到 `GMT-0400 (北美东部夏令时间)` |
+| 恢复中文并重启 Chrome，再检查日期与语言 | 补丁生效时，中文环境仍保持不变 | 已确认 `navigator.language` 为 `zh-CN`，日期仍含中文时区名称 |
+| 网站首选语言为英文，但 Chrome 显示语言仍为中文 | 时区字符串问题可能仍然存在 | 本次环境中 `navigator.language` 为 `en` 时，日期仍为中文 |
+| 英文显示语言、浏览器重启、未启用补丁 | 时区名称变为英文，原始错误消失 | 已观察到英文日期文本；用户确认登录成功 |
+| 用含中文原文的 JSON 构造请求头，不发送请求 | 浏览器拒绝无法转换为字节字符串的值 | 中文重启后再次复现；第一个不合法字符为“北”（`U+5317`，十进制 21271） |
+| 用 Unicode 转义后的 JSON 构造请求头 | 构造成功，JSON 解码结果与原文一致 | 通过 |
+| 中文、日文和表情字符 | 解码后原始数据保持一致，包括代理对 | 本地自动化测试通过 |
+| JSON 数字的原始写法及其他请求头 | 保持不变 | 本地自动化测试通过 |
+| 请求体、凭据选项和原始输入 | 保持不变，不直接修改传入的请求头 | 本地自动化测试通过 |
+| 普通对象、键值对数组请求头，以及 `Request` 输入 | 补丁在限定范围内生效 | 本地自动化测试通过 |
+| 已有 `Headers` 对象和纯 ASCII 值 | 原样通过 | 本地自动化测试通过 |
+| 其他域名、`/cart` 和 `/identity-other` | 不进行修改 | 本地自动化测试通过 |
+| 无效 JSON | 不猜测或改写内容 | 本地自动化测试通过 |
+| 网站先保存补丁后的 fetch，再插入 `x-grid-b` | 提前注入的补丁能处理后来加入的请求头 | 本地模拟网站包装顺序的测试通过 |
+| 中文显示语言、篡改猴 Dynamic 模式、脚本启用、重新加载真实登录页 | 原始错误消失，邮箱步骤可继续 | **通过：重启后已确认简体中文，脚本启用，Dynamic 设置保持生效，原始错误未再出现** |
+| 在上述中文环境中完成完整身份认证 | 确认账号已登录 | **通过：账号所有者完成 Chrome 身份确认后，Best Buy 返回首页并显示已登录账号问候语** |
+| 同一会话停用脚本的 A/B 对照 | 重新复现原始错误，再启用补丁 | 未进行；采用此前记录的原始故障作为基线 |
+| 独立密码或一次性验证码登录路径 | 各步骤均无原始编码异常 | 未测试 |
+| 网站正式修复后，停用脚本并刷新 | 正常登录仍能继续 | 尚不适用 |
 
-Local tests simulate only the observed calling pattern and do not contact Best Buy. They do not prove server acceptance, main-world injection, extension timing, or authentication.
+本地测试仅模拟已观察到的调用方式，不连接 Best Buy。它们不能单独证明服务端接受请求、脚本已注入网页主环境、扩展执行时机正确，或账号认证成功。
 
-## Small self-contained browser test
+## 运行本地测试
 
-The repository's complete dependency-free local checks run with `npm test` (Node.js 18+) or `node tests/header-fix.test.cjs`. They use Node's built-in assertion, VM, and Fetch API implementations; browser/site verification remains the separate procedure below.
+安装 Node.js 18 或更新版本后，在仓库目录执行：
 
-The following can be run in a local test page or browser developer console. It performs no requests and uses no account data. The exact wording of the initial exception varies by browser.
+```sh
+npm test
+```
+
+也可以直接运行：
+
+```sh
+node tests/header-fix.test.cjs
+```
+
+测试不依赖第三方包，使用 Node.js 内置的断言、VM 和 Fetch API。真实浏览器与网站验证需另按下文进行。普通用户安装使用脚本无需运行这些开发测试。
+
+## 最小浏览器复现示例
+
+以下代码可在本地测试页面或浏览器开发者控制台运行。它不发送请求，也不使用账号数据。不同浏览器的初始异常措辞可能不同。
 
 ```js
 const original = JSON.stringify({
@@ -47,7 +71,7 @@ const original = JSON.stringify({
 
 try {
   new Headers({ 'x-grid-b': original });
-  console.log('Unexpected: literal Unicode accepted');
+  console.log('与预期不同：浏览器接受了未转义的 Unicode 字符');
 } catch (error) {
   console.log(error.name, error.message);
 }
@@ -58,17 +82,17 @@ const escaped = original.replace(/[\u0080-\uffff]/g, character =>
 new Headers({ 'x-grid-b': escaped });
 console.assert(!/[^\x00-\x7f]/.test(escaped));
 console.assert(JSON.stringify(JSON.parse(escaped)) === original);
-console.log('PASS: ASCII-only header; decoded JSON preserved');
+console.log('通过：请求头仅含 ASCII 字符，JSON 解码后的数据保持一致');
 ```
 
-## Actual-site verification procedure
+## 真实网站验证步骤
 
-1. Record OS, Chrome version, Tampermonkey version, script version, display language, and date-string time-zone description. Do not record passwords, session values, email addresses, or authentication codes in the public report.
-2. Save the script, enable it, and select Tampermonkey's `UserScripts API Dynamic` injection mode. Confirm Chrome has allowed userscripts for the extension.
-3. Restore the intended Chinese display language and restart Chrome if required. Verify that browser UI language and the date's time-zone text are actually Chinese; a language preference alone does not prove this.
-4. Open a fresh Best Buy sign-in page through its normal website flow. Do not reuse a page that initialized before the script was enabled.
-5. Enter the account owner's email and submit once. Record whether the exact original error appears or the intended next authentication step is reached. Do not publish the account identifier.
-6. If full authentication is needed, let the account owner complete required private credentials or verification. Record full login separately from removal of the header exception.
-7. If the original error persists, inspect userscript permission, Dynamic mode, page reload, script scope, and injection order before treating the local proof as invalid. Record the observed failure honestly.
+1. 记录操作系统、Chrome 版本、篡改猴版本、脚本版本、显示语言，以及日期字符串中的时区描述。公开报告中不要记录密码、会话值、邮箱地址或身份验证码。
+2. 保存并启用脚本，将篡改猴注入模式设为 `UserScripts API Dynamic`，确认 Chrome 已允许该扩展执行用户脚本。
+3. 恢复需要使用的中文显示语言，按提示重启 Chrome。确认浏览器界面和日期时区描述实际为中文；仅设置语言偏好不足以证明这一点。
+4. 从 Best Buy 正常网站流程打开新的登录页，避免复用脚本启用前已经初始化的页面。
+5. 输入账号所有者的邮箱并提交一次，记录是出现原始报错，还是进入下一步认证。不要公开账号标识。
+6. 如需验证完整登录，由账号所有者完成必要的凭据或身份确认。将“原始报错消失”和“完整登录成功”分别记录。
+7. 如果错误仍然存在，检查用户脚本权限、Dynamic 模式、页面是否重新加载、脚本作用范围及注入顺序，并如实记录结果。
 
-Use the current webpage outcome as evidence. A green script toggle, a Tampermonkey script count, or a successful offline `Headers` constructor test does not by itself prove the actual login fix.
+应以网页实际结果为依据。脚本开关为绿色、篡改猴显示脚本数量、或离线 `Headers` 构造测试通过，都不能单独证明真实登录已经修复。

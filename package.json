@@ -2,7 +2,7 @@
   "name": "bestbuy-chinese-login-fix",
   "version": "1.0.1",
   "private": true,
-  "description": "Scoped userscript compatibility fix for Best Buy localized x-grid-b request headers.",
+  "description": "修复中文 Chrome 登录 Best Buy 时，x-grid-b 请求头中的中文时区名称引发的字符编码异常。",
   "scripts": {
     "test": "node tests/header-fix.test.cjs"
   },

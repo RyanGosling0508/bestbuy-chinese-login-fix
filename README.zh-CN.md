@@ -1,6 +1,6 @@
 # Best Buy 中文请求头兼容修复
 
-[English](README.md)
+[安装和设置](#安装和设置) · [验证记录](VALIDATION.md)
 
 [在 Greasy Fork 安装](https://greasyfork.org/zh-CN/scripts/596108-best-buy-%E4%B8%AD%E6%96%87%E8%AF%B7%E6%B1%82%E5%A4%B4%E5%85%BC%E5%AE%B9%E4%BF%AE%E5%A4%8D) · [GitHub 源码](./bestbuy-chinese-header-fix.user.js) · [GitHub 仓库](https://github.com/RyanGosling0508/bestbuy-chinese-login-fix)
 
@@ -47,6 +47,8 @@ Failed to execute 'fetch' on 'Window': Failed to read the 'headers' property fro
 两者经 JSON 解码后的数据完全相同。脚本先确认内容为有效 JSON，再替换原文字符，不进行 JSON 重新序列化，因此也保留数字的原始写法和现有排版。Unicode 转义属于 [JSON 标准定义的表示方式](https://www.rfc-editor.org/rfc/rfc8259#section-7)。
 
 ## 安装和设置
+
+这是在浏览器中运行的篡改猴脚本，无需部署服务器，也不需要安装 Node.js 才能使用。Node.js 仅用于开发者运行本地测试。
 
 1. 将 `bestbuy-chinese-header-fix.user.js` 安装到篡改猴（Tampermonkey）。也可以新建脚本，删除默认内容，粘贴此文件全部内容并保存。
 2. 确认本脚本已启用。
